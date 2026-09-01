@@ -84,7 +84,7 @@ export const groups: Group[] = [
           },
           {
             type: "image",
-            caption: "ภาพหน้าแดชบอร์ดรวมของระบบ (ใส่ภาพหน้าจอจริงของคุณที่นี่)",
+            caption: "ภาพหน้าแดชบอร์ดรวมของระบบ",
             src: "/images/admin-dashboard.png",
           },
         ],

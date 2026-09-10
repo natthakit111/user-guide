@@ -85,7 +85,7 @@ export const groups: Group[] = [
           {
             type: "image",
             caption: "ภาพหน้าแดชบอร์ดรวมของระบบ",
-            src: "/images/admin-dashboard.png",
+            src: "/images/sdms-system-workflow.png",
           },
         ],
       },
@@ -543,8 +543,7 @@ export const groups: Group[] = [
           },
           {
             type: "image",
-            caption:
-              "ภาพฟอร์มบันทึกมิเตอร์พร้อมช่องแนบรูป",
+            caption: "ภาพฟอร์มบันทึกมิเตอร์พร้อมช่องแนบรูป",
             src: "/images/meter-form.png",
           },
           {

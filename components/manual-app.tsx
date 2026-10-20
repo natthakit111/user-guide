@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react"
 import { BlockRenderer } from "@/components/block-renderer"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { Button } from "@/components/ui/button"
-import { allSections, groups } from "@/lib/manual"
+import { allSections, groups, type Block } from "@/lib/manual"
 import { cn } from "@/lib/utils"
 
 const audienceBadge = {
@@ -13,6 +13,30 @@ const audienceBadge = {
   tenant: { label: "ผู้เช่า", className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400", icon: User },
   all: { label: "ทั่วไป", className: "bg-muted text-muted-foreground", icon: Building2 },
 } as const
+
+function blockText(block: Block): string {
+  switch (block.type) {
+    case "steps":
+    case "list":
+      return block.items.join(" ")
+    case "table":
+      return [...block.head, ...block.rows.flat()].join(" ")
+    case "image":
+      return block.caption
+    default:
+      return block.text
+  }
+}
+
+// full text of each section, so search also matches words inside the content
+const searchIndex = new Map(
+  allSections.map((s) => [
+    s.id,
+    [s.title, s.nav, s.summary ?? "", ...s.blocks.map(blockText)].join(" ").toLowerCase(),
+  ]),
+)
+
+const sectionIds = new Set(allSections.map((s) => s.id))
 
 export function ManualApp() {
   const [activeId, setActiveId] = useState(allSections[0].id)
@@ -31,20 +55,26 @@ export function ManualApp() {
     return groups
       .map((g) => ({
         ...g,
-        sections: g.sections.filter(
-          (s) =>
-            s.title.toLowerCase().includes(q) ||
-            s.nav.toLowerCase().includes(q) ||
-            (s.code?.toLowerCase().includes(q) ?? false) ||
-            (s.summary?.toLowerCase().includes(q) ?? false),
-        ),
+        sections: g.sections.filter((s) => searchIndex.get(s.id)?.includes(q)),
       }))
       .filter((g) => g.sections.length > 0)
   }, [query])
 
+  // each section has its own URL (#section-id), so links can be shared and the back button works
+  useEffect(() => {
+    function syncFromHash() {
+      const id = decodeURIComponent(window.location.hash.slice(1))
+      setActiveId(sectionIds.has(id) ? id : allSections[0].id)
+    }
+    syncFromHash()
+    window.addEventListener("hashchange", syncFromHash)
+    return () => window.removeEventListener("hashchange", syncFromHash)
+  }, [])
+
   function goTo(id: string) {
-    setActiveId(id)
     setMobileOpen(false)
+    if (window.location.hash === `#${id}`) setActiveId(id)
+    else window.location.hash = id
   }
 
   useEffect(() => {
@@ -133,15 +163,12 @@ export function ManualApp() {
                 <activeBadge.icon className="size-3.5" />
                 {activeBadge.label}
               </span>
-              {active.code && (
-                <span className="rounded-md border border-border bg-muted px-2 py-0.5 font-mono text-xs text-muted-foreground">
-                  {active.code}
-                </span>
-              )}
             </div>
 
             <h1 className="font-heading text-3xl font-bold tracking-tight text-foreground sm:text-4xl">{active.title}</h1>
             {active.summary && <p className="mt-3 text-base text-muted-foreground">{active.summary}</p>}
+
+            {active.id === allSections[0].id && <AudiencePicker goTo={goTo} />}
 
             <hr className="my-8 border-border" />
 
@@ -178,6 +205,48 @@ export function ManualApp() {
             </nav>
           </article>
         </main>
+      </div>
+    </div>
+  )
+}
+
+function AudiencePicker({ goTo }: { goTo: (id: string) => void }) {
+  const choices = [
+    {
+      id: "tenant-intro",
+      icon: User,
+      title: "ฉันเป็นผู้เช่า",
+      desc: "ดูบิล จ่ายค่าเช่า แจ้งซ่อม ขอย้ายออก",
+      className: "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400",
+    },
+    {
+      id: "getting-started",
+      icon: ShieldCheck,
+      title: "ฉันเป็นแอดมิน / เจ้าของหอ",
+      desc: "ตั้งค่าหอพัก จัดการห้อง ผู้เช่า และบิล",
+      className: "bg-primary/15 text-primary",
+    },
+  ]
+  return (
+    <div className="mt-6">
+      <p className="mb-3 text-sm font-medium text-foreground">คุณใช้งานระบบในฐานะอะไร? เลือกเพื่อไปที่คู่มือของคุณได้เลย</p>
+      <div className="grid gap-3 sm:grid-cols-2">
+        {choices.map((c) => (
+          <button
+            key={c.id}
+            onClick={() => goTo(c.id)}
+            className="group flex items-center gap-3 rounded-xl border border-border p-4 text-left transition-colors hover:border-primary/50 hover:bg-accent/50"
+          >
+            <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", c.className)}>
+              <c.icon className="size-5" />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-medium text-foreground group-hover:text-primary">{c.title}</span>
+              <span className="block text-sm text-muted-foreground">{c.desc}</span>
+            </span>
+            <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+          </button>
+        ))}
       </div>
     </div>
   )
@@ -235,16 +304,6 @@ function SidebarContent({
                             : "text-sidebar-foreground/80 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground",
                         )}
                       >
-                        {section.code && (
-                          <span
-                            className={cn(
-                              "font-mono text-[10px]",
-                              isActive ? "text-primary" : "text-muted-foreground/60",
-                            )}
-                          >
-                            {section.code}
-                          </span>
-                        )}
                         <span className="truncate">{section.nav}</span>
                       </button>
                     </li>

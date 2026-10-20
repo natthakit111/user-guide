@@ -15,14 +15,14 @@ export function ImagePlaceholder({
           href={src}
           target="_blank"
           rel="noopener noreferrer"
-          className="block overflow-hidden rounded-xl border border-border bg-muted/20"
+          className="mx-auto block w-fit max-w-full overflow-hidden rounded-xl border border-border bg-muted/20"
         >
           <Image
             src={src}
             alt={caption}
             width={1200}
             height={700}
-            className="w-full h-auto"
+            className="h-auto max-h-[75vh] w-auto max-w-full"
           />
         </a>
         <figcaption className="mt-2 text-center text-xs text-muted-foreground">

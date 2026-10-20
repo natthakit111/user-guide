@@ -11,7 +11,12 @@ export function ImagePlaceholder({
   if (src) {
     return (
       <figure className="my-6">
-        <div className="overflow-hidden rounded-xl border border-border bg-muted/20">
+        <a
+          href={src}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block overflow-hidden rounded-xl border border-border bg-muted/20"
+        >
           <Image
             src={src}
             alt={caption}
@@ -19,9 +24,9 @@ export function ImagePlaceholder({
             height={700}
             className="w-full h-auto"
           />
-        </div>
+        </a>
         <figcaption className="mt-2 text-center text-xs text-muted-foreground">
-          {caption}
+          {caption} · แตะที่ภาพเพื่อดูขนาดเต็ม
         </figcaption>
       </figure>
     );
